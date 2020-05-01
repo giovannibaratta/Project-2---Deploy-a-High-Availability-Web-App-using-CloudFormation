@@ -1,0 +1,122 @@
+Parameters:
+    ProjectName:
+        Description: The name of the project
+        Type: String
+
+    vpcNetId:
+        Description: vpc network id
+        Type: String
+        Default: 10.0.0.0/16
+
+    privateNetId1:
+        Description: private subnet 1 network id
+        Type: String
+        Default: 10.0.1.0/24
+
+    privateNetId2:
+        Description: private subnet 2 network id
+        Type: String
+        Default: 10.0.2.0/24
+
+    publicNetId1:
+        Description: private subnet 1 network id
+        Type: String
+        Default: 10.0.253.0/24
+
+    publicNetId2:
+        Description: public subnet 2 network id
+        Type: String
+        Default: 10.0.254.0/24
+
+
+Resources: 
+    vpc:
+        Type: AWS::EC2::VPC
+        Properties: 
+            CidrBlock: !Ref vpcNetId
+            EnableDnsHostnames: True
+            Tags: 
+                - 
+                    Key: ProjectName
+                    Value: !Sub ${ProjectName}
+
+    privateSubnet1:
+        Type: AWS::EC2::Subnet
+        Properties: 
+            AvailabilityZone: !Select [ 0 , !GetAZs ]
+            CidrBlock: !Ref privateNetId1
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - 
+                    Key: ProjectName
+                    Value: !Sub ${ProjectName}
+            VpcId: !Ref vpc
+
+    privateSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties: 
+            AvailabilityZone: !Select [ 1 , !GetAZs ]
+            CidrBlock: !Ref privateNetId2
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - 
+                    Key: ProjectName
+                    Value: !Sub ${ProjectName}
+            VpcId: !Ref vpc
+
+    publicSubnet1:
+        Type: AWS::EC2::Subnet
+        Properties: 
+            AvailabilityZone: !Select [ 0 , !GetAZs ]
+            CidrBlock: !Ref publicNetId1
+            MapPublicIpOnLaunch: true
+            Tags: 
+                - 
+                    Key: ProjectName
+                    Value: !Sub ${ProjectName}
+            VpcId: !Ref vpc
+
+    publicSubnet2:
+        Type: AWS::EC2::Subnet
+        Properties: 
+            AvailabilityZone: !Select [ 1 , !GetAZs ]
+            CidrBlock: !Ref publicNetId2
+            MapPublicIpOnLaunch: true
+            Tags: 
+                - 
+                    Key: ProjectName
+                    Value: !Sub ${ProjectName}
+            VpcId: !Ref vpc
+
+
+Outputs:
+    vpc:
+        Description: Reference to VPCID
+        Value: !Ref vpc
+        Export:
+            Name: !Sub ${ProjectName}-VPCID
+
+    privateSubnet1:
+        Description: Reference to the first private subnet
+        Value: !Ref privateSubnet1
+        Export:
+            Name: !Sub ${ProjectName}-PRIVATE-SUBNET1-ID
+    
+    privateSubnet2:
+        Description: Reference to the second private subnet
+        Value: !Ref privateSubnet2
+        Export:
+            Name: !Sub ${ProjectName}-PRIVATE-SUBNET2-ID
+
+    publicSubnet1:
+        Description: Reference to the first public subnet
+        Value: !Ref publicSubnet1
+        Export:
+            Name: !Sub ${ProjectName}-PUBLIC-SUBNET1-ID
+
+    publicSubnet2:
+        Description: Reference to the first second subnet
+        Value: !Ref publicSubnet2
+        Export:
+            Name: !Sub ${ProjectName}-PUBLIC-SUBNET2-ID
+    

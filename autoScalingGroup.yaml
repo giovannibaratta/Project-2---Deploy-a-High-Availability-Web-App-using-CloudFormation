@@ -1,0 +1,51 @@
+Parameters:
+
+    ProjectName:
+        Description: The name of the project
+        Type: String
+
+    AutoScalingMinSize:
+        Description: Minimum number of instance in the autoscaling group
+        Type: Number
+        MinValue: 1
+        Default: 2
+
+    AutoScalingMaxSize:
+        Description: Maximum number of instance in the autoscaling group
+        Type: Number
+        MinValue: 1
+
+    InstanceType:
+        Description: Instance type to launch in the autoscaling group
+        Type: String
+        Default: t2.micro
+
+Resources:
+    
+    LaunchConfiguration:
+        Type: AWS::AutoScaling::LaunchConfiguration
+        Properties: 
+            InstanceType: !Ref InstanceType
+            ImageId: ami-085925f297f89fce1
+            BlockDeviceMappings:
+                -   DeviceName: /dev/sdb
+                    Ebs:
+                        VolumeSize: 10
+    
+    AutoScalingGroup:
+        Type: AWS::AutoScaling::AutoScalingGroup
+        Properties: 
+            VPCZoneIdentifier:
+                - Fn::ImportValue:
+                    !Sub "${ProjectName}-PRIVATE-SUBNET1-ID"
+                - Fn::ImportValue:
+                    !Sub "${ProjectName}-PRIVATE-SUBNET2-ID"
+
+            AutoScalingGroupName: !Sub ${ProjectName}-AutoScalingGroup
+            DesiredCapacity: !Ref AutoScalingMinSize
+            HealthCheckGracePeriod: 180
+            HealthCheckType: ELB
+            LaunchConfigurationName: !Ref LaunchConfiguration
+            MaxSize: !Ref AutoScalingMaxSize
+            MinSize: !Ref AutoScalingMinSize
+            
