@@ -48,4 +48,51 @@ Resources:
             LaunchConfigurationName: !Ref LaunchConfiguration
             MaxSize: !Ref AutoScalingMaxSize
             MinSize: !Ref AutoScalingMinSize
+
+    ScalingOutPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties: 
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            PolicyType: SimpleScaling
+            ScalingAdjustment: 1
+
+    ScalingOutAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties: 
+            AlarmActions: 
+                - !Ref ScalingOutPolicy
+            AlarmDescription: Trigger scale out policy
+            ComparisonOperator: GreaterThanThreshold
+            EvaluationPeriods: 2
+            MetricName: CPUUtilization
+            Namespace: AWS/EC2
+            Period: 60
+            Statistic: Average
+            Threshold: 60.0
+            Unit: Percent
+
+    ScalingInPolicy:
+        Type: AWS::AutoScaling::ScalingPolicy
+        Properties: 
+            AdjustmentType: ChangeInCapacity
+            AutoScalingGroupName: !Ref AutoScalingGroup
+            PolicyType: SimpleScaling
+            ScalingAdjustment: -1
+
+    ScalingOutAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties: 
+            AlarmActions: 
+                - !Ref ScalingInPolicy
+            AlarmDescription: Trigger scale in policy
+            ComparisonOperator: LessThanThreshold
+            EvaluationPeriods: 2
+            MetricName: CPUUtilization
+            Namespace: AWS/EC2
+            Period: 60
+            Statistic: Average
+            Threshold: 40.0
+            Unit: Percent
+
             
