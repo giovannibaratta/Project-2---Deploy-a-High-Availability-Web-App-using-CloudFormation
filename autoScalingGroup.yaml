@@ -95,4 +95,20 @@ Resources:
             Threshold: 40.0
             Unit: Percent
 
+    LoadBalancer:
+        Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+        Properties: 
+            IpAddressType: ipv4
+            Name: !Sub ${ProjectName}-LoadBalancer
+            #SecurityGroups: 
+            #    - String
+            Subnets: 
+                - Fn::ImportValue: !Sub "${ProjectName}-PUBLIC-SUBNET1-ID"
+                - Fn::ImportValue: !Sub "${ProjectName}-PUBLIC-SUBNET2-ID"
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+            Type: application
+
+
             
