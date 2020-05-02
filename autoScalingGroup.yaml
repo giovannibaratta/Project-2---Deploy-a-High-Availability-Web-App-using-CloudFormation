@@ -22,6 +22,91 @@ Parameters:
 
 Resources:
     
+    S3Reader:
+        Type: AWS::IAM::Role
+        Properties: 
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement: 
+                - Effect: "Allow"
+                  Principal: 
+                    Service: 
+                        - "ec2.amazonaws.com"
+                  Action: 
+                        - "sts:AssumeRole"
+            Description: Enable reading on S3 service
+            Policies: 
+                - PolicyName: root
+                  PolicyDocument:
+                    Version: 2012-10-17
+                    Statement:
+                      - Effect: Allow
+                        Action: 's3:GetObject'
+                        Resource: 'arn:aws:s3:::gbar-udagrambucket'
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+
+
+    InstanceProfile:
+        Type: AWS::IAM::InstanceProfile
+        Properties: 
+            Roles:
+                - !Ref S3Reader
+
+    EC2SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: Enable HTTP port 80 traffic on EC2 instance
+            SecurityGroupEgress: 
+                -   CidrIp: 0.0.0.0/0
+                    Description: Enable all egress traffic
+                    FromPort: 0
+                    IpProtocol: -1
+                    ToPort: 65535
+
+            SecurityGroupIngress: 
+                -   CidrIp: 
+                        Fn::ImportValue:
+                            Fn::Sub: "${ProjectName}-VPCCIDRBLOCK"
+                    Description: Enable only internal traffic on port 80
+                    FromPort: 80
+                    IpProtocol: tcp
+                    ToPort: 80
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+            VpcId: 
+                Fn::ImportValue: 
+                    Fn::Sub: "${ProjectName}-VPCID"
+
+    LBSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: Enable HTTP port 80 traffic on load balancer
+            SecurityGroupEgress: 
+                -   CidrIp: 
+                        Fn::ImportValue:
+                            Fn::Sub: "${ProjectName}-VPCCIDRBLOCK"
+                    Description: Enable egress traffic only on local vpc
+                    FromPort: 80
+                    IpProtocol: tcp
+                    ToPort: 80
+
+            SecurityGroupIngress: 
+                -   CidrIp: 0.0.0.0/0
+                    Description: Enable only ingress traffic on port 80
+                    FromPort: 80
+                    IpProtocol: tcp
+                    ToPort: 80
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+            VpcId: 
+                Fn::ImportValue: 
+                    Fn::Sub: "${ProjectName}-VPCID"
+
+
     LaunchConfiguration:
         Type: AWS::AutoScaling::LaunchConfiguration
         Properties: 
@@ -31,6 +116,20 @@ Resources:
                 -   DeviceName: /dev/sdb
                     Ebs:
                         VolumeSize: 10
+            IamInstanceProfile: !Ref InstanceProfile
+            SecurityGroups:
+                - !Ref EC2SecurityGroup
+            UserData:
+                Fn::Base64: !Sub |
+                    #!/bin/bash
+                    apt-get update -y
+                    apt-get install unzip awscli -y
+                    apt-get install apache2 -y
+                    systemctl start apache2.service
+                    cd /var/www/html
+                    echo "It works!" >> index.html
+                    #aws s3 cp s3://udacity-demo-1/udacity.zip .
+                    #unzip -o udacity.zip
     
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
@@ -48,6 +147,8 @@ Resources:
             LaunchConfigurationName: !Ref LaunchConfiguration
             MaxSize: !Ref AutoScalingMaxSize
             MinSize: !Ref AutoScalingMinSize
+            TargetGroupARNs: 
+                - !Ref TargetGroup
 
     ScalingOutPolicy:
         Type: AWS::AutoScaling::ScalingPolicy
@@ -100,8 +201,8 @@ Resources:
         Properties: 
             IpAddressType: ipv4
             Name: !Sub ${ProjectName}-LoadBalancer
-            #SecurityGroups: 
-            #    - String
+            SecurityGroups: 
+                - !Ref LBSecurityGroup
             Subnets: 
                 - Fn::ImportValue: !Sub "${ProjectName}-PUBLIC-SUBNET1-ID"
                 - Fn::ImportValue: !Sub "${ProjectName}-PUBLIC-SUBNET2-ID"
@@ -109,6 +210,49 @@ Resources:
                 - Key: ProjectName
                   Value: !Sub ${ProjectName}
             Type: application
+
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties: 
+            HealthCheckEnabled: true
+            HealthCheckIntervalSeconds: 60
+            HealthCheckPath: /
+            HealthCheckTimeoutSeconds: 5
+            HealthyThresholdCount: 3
+            Port: 80
+            Protocol: HTTP
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+            TargetType: instance
+            UnhealthyThresholdCount: 2
+            VpcId: 
+                Fn::ImportValue: 
+                    Fn::Sub: "${ProjectName}-VPCID"
+
+    Listener:
+        Type: AWS::ElasticLoadBalancingV2::Listener
+        Properties: 
+            DefaultActions: 
+                - Type: "forward"
+                  TargetGroupArn: !Ref TargetGroup
+            LoadBalancerArn: !Ref LoadBalancer
+            Port: 80
+            Protocol: HTTP
+
+
+###############
+### OUTPUS ####
+###############
+
+Outputs:
+    vpc:
+        Description: Load balancer DNS
+        Value: !Sub
+            - http://${DNS}
+            - { DNS : !GetAtt LoadBalancer.DNSName }
+        Export:
+            Name: !Sub ${ProjectName}-LOADBALANCERDNS
 
 
             

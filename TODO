@@ -1,0 +1,12 @@
+☐ sostiuire la micro con la istanza del tipo giusto, almeno 2CPU e 4GB di RAM.
+☐ Verificare che lo spazio sia su un unico disco e non due.
+☐ Devono essere 4 server, 2 per subnet
+✔ IAM Role per scaricare i dati da S3 @done(20-05-02 11:10)
+✔ Porta 80 aperta sulla rete locale sui server per poter comunicare con il load balancer @done(20-05-02 11:10)
+✔ Nessuna restrizione in uscita dai server @done(20-05-02 11:26)
+✔ Porta 80 aperta sul load balancer da tutti gli IP, in uscita solo porta 80 per la rete interna. @done(20-05-02 11:26)
+✔ Output del public URL del load balancer con http:// @done(20-05-02 09:39)
+✔ Listener load balancer @done(20-05-02 10:08)
+✔ Target group load balancer @done(20-05-02 10:08)
+☐ App di base su S3 con scritto it works
+☐ Rimuovere key e possibilità di ssh e public ip

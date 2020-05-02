@@ -16,4 +16,5 @@ aws cloudformation "$1"-stack \
         --region us-east-1 \
         --stack-name $2 \
         --template-body file://$3 \
+        --capabilities CAPABILITY_IAM \
         $PARAMS

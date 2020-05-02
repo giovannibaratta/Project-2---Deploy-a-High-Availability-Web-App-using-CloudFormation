@@ -107,6 +107,12 @@ Outputs:
         Export:
             Name: !Sub ${ProjectName}-VPCID
 
+    vpcCidrBlock:
+        Description: Vpc CidrBlock
+        Value: !GetAtt vpc.CidrBlock
+        Export:
+            Name: !Sub ${ProjectName}-VPCCIDRBLOCK
+
     privateSubnet1:
         Description: Reference to the first private subnet
         Value: !Ref privateSubnet1
