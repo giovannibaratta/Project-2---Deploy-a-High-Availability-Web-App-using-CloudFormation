@@ -10,3 +10,16 @@
 ✔ Target group load balancer @done(20-05-02 10:08)
 ☐ App di base su S3 con scritto it works
 ☐ Rimuovere key e possibilità di ssh e public ip
+☐ Cambiar le subnet dell'autoscaling group in private
+☐ Il ruolo specificato nel bucket cambia con il tempo
+
+
+
+#apt-get update -y
+                    #apt-get install unzip awscli -y
+                    #apt-get install apache2 -y
+                    #systemctl start apache2.service
+                    #cd /var/www/html
+                    #echo "It works!" >> index.html
+                    ##aws s3 cp s3://udacity-demo-1/udacity.zip .
+                    #unzip -o udacity.zip
