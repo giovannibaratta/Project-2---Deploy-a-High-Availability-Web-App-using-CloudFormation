@@ -57,7 +57,7 @@ Resources:
     EC2SecurityGroup:
         Type: AWS::EC2::SecurityGroup
         Properties: 
-            GroupDescription: Enable HTTP port 80 traffic on EC2 instance
+            GroupDescription: Enable ingress HTTP port 80 traffic from local. Egress all traffic allowed.
             SecurityGroupEgress: 
                 -   CidrIp: 0.0.0.0/0
                     Description: Enable all egress traffic
@@ -73,30 +73,6 @@ Resources:
                     FromPort: 80
                     IpProtocol: tcp
                     ToPort: 80
-            Tags: 
-                - Key: ProjectName
-                  Value: !Sub ${ProjectName}
-            VpcId: 
-                Fn::ImportValue: 
-                    Fn::Sub: "${ProjectName}-VPCID"
-
-    SSHSecurityGroup:
-        Type: AWS::EC2::SecurityGroup
-        Properties: 
-            GroupDescription: Enable SSH
-            SecurityGroupEgress: 
-                -   CidrIp: 0.0.0.0/0
-                    Description: Enable all egress traffic
-                    FromPort: 0
-                    IpProtocol: -1
-                    ToPort: 65535
-
-            SecurityGroupIngress: 
-                -   CidrIp: 0.0.0.0/0
-                    Description: Enable only internal traffic on port 80
-                    FromPort: 22
-                    IpProtocol: -1
-                    ToPort: 22
             Tags: 
                 - Key: ProjectName
                   Value: !Sub ${ProjectName}
@@ -134,7 +110,6 @@ Resources:
     LaunchConfiguration:
         Type: AWS::AutoScaling::LaunchConfiguration
         Properties: 
-            KeyName: aws_udacity_lab_linux
             InstanceType: !Ref InstanceType
             ImageId: ami-085925f297f89fce1
             BlockDeviceMappings:
@@ -144,11 +119,13 @@ Resources:
             IamInstanceProfile: !Ref InstanceProfile
             SecurityGroups:
                 - !Ref EC2SecurityGroup
-                - !Ref SSHSecurityGroup
                 
             UserData:
                 Fn::Base64: !Sub |
                     #!/bin/bash
+                    mkfs -t ext2 /dev/xvdb
+                    mkdir /more-storage
+                    mount /dev/xvdb /more-storage
                     apt-get update -y
                     apt-get install unzip awscli -y
                     apt-get install apache2 -y

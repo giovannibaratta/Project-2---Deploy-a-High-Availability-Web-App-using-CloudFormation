@@ -5,10 +5,14 @@
     },
     {
         "ParameterKey":"AutoScalingMinSize",
-        "ParameterValue":"1"
+        "ParameterValue":"4"
     },
     {
         "ParameterKey":"AutoScalingMaxSize",
-        "ParameterValue":"2"
+        "ParameterValue":"8"
+    },
+    {
+        "ParameterKey":"InstanceType",
+        "ParameterValue":"t3.medium"
     }
 ]
