@@ -41,8 +41,8 @@ Resources:
                     Version: 2012-10-17
                     Statement:
                       - Effect: Allow
-                        Action: 's3:GetObject'
-                        Resource: 'arn:aws:s3:::gbar-udagrambucket'
+                        Action: "s3:GetObject"
+                        Resource: "arn:aws:s3:::gbar-udagrambucket/*"
             Tags: 
                 - Key: ProjectName
                   Value: !Sub ${ProjectName}
@@ -53,31 +53,6 @@ Resources:
         Properties: 
             Roles:
                 - !Ref S3Reader
-
-    SSHSecurityGroup:
-        Type: AWS::EC2::SecurityGroup
-        Properties: 
-            GroupDescription: Enable SSH
-            SecurityGroupEgress: 
-                -   CidrIp: 0.0.0.0/0
-                    Description: Enable all egress traffic
-                    FromPort: 0
-                    IpProtocol: -1
-                    ToPort: 65535
-
-            SecurityGroupIngress: 
-                -   CidrIp: 0.0.0.0/0
-                    Description: Enable only internal traffic on port 80
-                    FromPort: 22
-                    IpProtocol: -1
-                    ToPort: 22
-            Tags: 
-                - Key: ProjectName
-                  Value: !Sub ${ProjectName}
-            VpcId: 
-                Fn::ImportValue: 
-                    Fn::Sub: "${ProjectName}-VPCID"
-
 
     EC2SecurityGroup:
         Type: AWS::EC2::SecurityGroup
@@ -98,6 +73,30 @@ Resources:
                     FromPort: 80
                     IpProtocol: tcp
                     ToPort: 80
+            Tags: 
+                - Key: ProjectName
+                  Value: !Sub ${ProjectName}
+            VpcId: 
+                Fn::ImportValue: 
+                    Fn::Sub: "${ProjectName}-VPCID"
+
+    SSHSecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties: 
+            GroupDescription: Enable SSH
+            SecurityGroupEgress: 
+                -   CidrIp: 0.0.0.0/0
+                    Description: Enable all egress traffic
+                    FromPort: 0
+                    IpProtocol: -1
+                    ToPort: 65535
+
+            SecurityGroupIngress: 
+                -   CidrIp: 0.0.0.0/0
+                    Description: Enable only internal traffic on port 80
+                    FromPort: 22
+                    IpProtocol: -1
+                    ToPort: 22
             Tags: 
                 - Key: ProjectName
                   Value: !Sub ${ProjectName}
@@ -146,6 +145,7 @@ Resources:
             SecurityGroups:
                 - !Ref EC2SecurityGroup
                 - !Ref SSHSecurityGroup
+                
             UserData:
                 Fn::Base64: !Sub |
                     #!/bin/bash
@@ -154,8 +154,8 @@ Resources:
                     apt-get install apache2 -y
                     systemctl start apache2.service
                     cd /var/www/html
-                    rm index.html
-                    echo "It works, Udagram !!!!" >> index.html
+                    aws s3 cp s3://gbar-udagrambucket/udagram-demo.zip .
+                    unzip -o udagram-demo.zip
     
     AutoScalingGroup:
         Type: AWS::AutoScaling::AutoScalingGroup
@@ -168,7 +168,7 @@ Resources:
 
             AutoScalingGroupName: !Sub ${ProjectName}-AutoScalingGroup
             DesiredCapacity: !Ref AutoScalingMinSize
-            HealthCheckGracePeriod: 180
+            HealthCheckGracePeriod: 240
             HealthCheckType: ELB
             LaunchConfigurationName: !Ref LaunchConfiguration
             MaxSize: !Ref AutoScalingMaxSize
@@ -241,7 +241,7 @@ Resources:
         Type: AWS::ElasticLoadBalancingV2::TargetGroup
         Properties: 
             HealthCheckEnabled: true
-            HealthCheckIntervalSeconds: 60
+            HealthCheckIntervalSeconds: 30
             HealthCheckPath: /
             HealthCheckTimeoutSeconds: 5
             HealthyThresholdCount: 3
